@@ -30,6 +30,7 @@ import signal
 from hashlib import md5
 import luigi
 import luigi.hdfs
+import luigi.s3
 import configuration
 import warnings
 import mrrunner
@@ -424,10 +425,12 @@ class HadoopJobRunner(JobRunner):
             arglist += ['-inputformat', self.input_format]
 
         for target in luigi.task.flatten(job.input_hadoop()):
-            assert isinstance(target, luigi.hdfs.HdfsTarget)
+            assert isinstance(target, luigi.hdfs.HdfsTarget) or \
+                isinstance(target, luigi.s3.S3Target)
             arglist += ['-input', target.path]
 
-        assert isinstance(job.output(), luigi.hdfs.HdfsTarget)
+        assert isinstance(job.output(), luigi.hdfs.HdfsTarget) or \
+            isinstance(job.output(), luigi.s3.S3Target)
         arglist += ['-output', output_tmp_fn]
 
         # submit job
@@ -634,7 +637,8 @@ class JobTask(BaseHadoopJobTask):
         """
         outputs = luigi.task.flatten(self.output())
         for output in outputs:
-            if not isinstance(output, luigi.hdfs.HdfsTarget):
+            if not isinstance(output, luigi.hdfs.HdfsTarget) or \
+                    isinstance(output, luigi.s3.S3Target):
                 warnings.warn("Job is using one or more non-HdfsTarget outputs" +
                               " so it will be run in local mode")
                 return LocalJobRunner()
