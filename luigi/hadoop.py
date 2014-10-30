@@ -327,9 +327,14 @@ class HadoopJobRunner(JobRunner):
     and moving the result to the intended output directory. By default,
     this move happens using `hadoop -fs mv ...` for
     :class:`luigi.hdfs.HdfsTarget`. For any target type, including
-    :class:`luigi.s3.S3Target`, you can use Apache distcp instead by setting
-    [hadoop]->move-strategy=distcp and [hadoop]->distcp-jar=<jar-path-here>.
+    :class:`luigi.s3.S3Target`, you can use distcp instead by setting
+    `[hadoop]->move-strategy=distcp` in the config
+    or `move_strategy = 'distcp'` on the task.
+
     On Amazon Elastic MapReduce, the EMRFS S3 distcp jar is recommended.
+    To use the EMRFS S3 distcp jar, set
+    `[hadoop]->move-strategy=distcp-jar` and
+    `[hadoop]->distcp-jar=<jar-path-here>`
     (i.e. /home/hadoop/lib/emr-s3distcp-1.0.jar). You can provide additional
     distcp arguments, including Amazon's unique S3 arguments, to the distcp jar
     by defining a move_tmp_distcp_args() method on your task, which returns a
@@ -463,7 +468,9 @@ class HadoopJobRunner(JobRunner):
         run_and_track_hadoop_job(arglist)
 
         # rename temporary work directory to given output
-        move_strategy = config.get('hadoop', 'move-strategy', 'hadoop-fs')
+        move_strategy = getattr(job, 'move_strategy', None)
+        if move_strategy is None:
+            move_strategy = config.get('hadoop', 'move-strategy', 'hadoop-fs')
         if move_strategy == 'hadoop-fs':
             assert isinstance(tmp_target, luigi.hdfs.HdfsTarget), \
                 "hadoop-fs only works for HdfsTarget"
@@ -471,6 +478,14 @@ class HadoopJobRunner(JobRunner):
             tmp_target.move(output_final, raise_if_exists=True)
         elif move_strategy == 'distcp':
             logger.info('Moving temp output with distcp')
+            distcp_job_args = [luigi.hdfs.load_hadoop_cmd(), 'distcp']
+            if hasattr(job, 'move_tmp_distcp_args'):
+                distcp_job_args += job.move_tmp_distcp_args()
+            distcp_job_args += [tmp_target.path, output_final]
+            run_and_track_hadoop_job(distcp_job_args)
+            tmp_target.remove(recursive=True)
+        elif move_strategy == 'distcp-jar':
+            logger.info('Moving temp output with distcp jar')
             distcp_jar = config.get('hadoop', 'distcp-jar')
             distcp_job_args = [
                 luigi.hdfs.load_hadoop_cmd(), 'jar', distcp_jar,
