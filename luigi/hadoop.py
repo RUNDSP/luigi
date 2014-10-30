@@ -333,7 +333,7 @@ class HadoopJobRunner(JobRunner):
     (i.e. /home/hadoop/lib/emr-s3distcp-1.0.jar). You can provide additional
     distcp arguments, including Amazon's unique S3 arguments, to the distcp jar
     by defining a move_tmp_distcp_args() method on your task, which returns a
-    list, i.e. `['--s3Endpoint,s3-eu-west-1.amazonaws.com']`.
+    list, i.e. `['--s3Endpoint=s3-eu-west-1.amazonaws.com']`.
 
     Hint: If your mapper-only job results in too many small files, you can use
     distcp to combine them in the move step's reducer with groupBy and
@@ -474,8 +474,8 @@ class HadoopJobRunner(JobRunner):
             distcp_jar = config.get('hadoop', 'distcp-jar')
             distcp_job_args = [
                 luigi.hdfs.load_hadoop_cmd(), 'jar', distcp_jar,
-                '--src,{0}'.format(tmp_target.path),
-                '--dest,{0}'.format(output_final),
+                '--src={0}'.format(tmp_target.path),
+                '--dest={0}'.format(output_final),
             ]
             if hasattr(job, 'move_tmp_distcp_args'):
                 distcp_job_args += job.move_tmp_distcp_args()
