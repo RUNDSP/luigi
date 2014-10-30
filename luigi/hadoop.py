@@ -371,7 +371,7 @@ class HadoopJobRunner(JobRunner):
 
         # replace output with a temporary work directory
         job_output = job.output()
-        output_final = job_output.path
+        output_final = job_output.path.rstrip('/')
         tmp_path_dt = datetime.datetime.now().isoformat().replace(':', '-')
         output_tmp_fn = '{p}-temp-{dt}'.format(p=output_final, dt=tmp_path_dt)
         if isinstance(job_output, luigi.hdfs.HdfsTarget):
