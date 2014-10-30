@@ -335,6 +335,10 @@ class HadoopJobRunner(JobRunner):
     by defining a move_tmp_distcp_args() method on your task, which returns a
     list, i.e. `['--s3Endpoint,s3-eu-west-1.amazonaws.com']`.
 
+    Hint: If your mapper-only job results in too many small files, you can use
+    distcp to combine them in the move step's reducer with groupBy and
+    targetSize.
+
     TODO: add code to support Elastic Mapreduce (using boto)
           and local execution.
     '''
