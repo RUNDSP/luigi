@@ -323,7 +323,17 @@ class JobRunner(object):
 class HadoopJobRunner(JobRunner):
     ''' Takes care of uploading & executing a Hadoop job using Hadoop streaming
 
-    TODO: add code to support Elastic Mapreduce (using boto) and local execution.
+    Output is written atomically by writing to a temporary output directory
+    and moving the result to the intended output directory. By default,
+    this move happens using `hadoop -fs mv ...` for
+    :class:`luigi.hdfs.HdfsTarget`. For any target type, including
+    :class:`luigi.s3.S3Target`, you can use Apache distcp by setting
+    [hadoop]->move-strategy=distcp and [hadoop]->distcp-jar=<jar-path-here>.
+    On Amazon Elastic MapReduce, the EMRFS S3 distcp jar is recommended.
+    (i.e. /home/hadoop/lib/emr-s3distcp-1.0.jar).
+
+    TODO: add code to support Elastic Mapreduce (using boto)
+          and local execution.
     '''
     def __init__(self, streaming_jar, modules=[], streaming_args=[], libjars=[], libjars_in_hdfs=[], jobconfs={}, input_format=None, output_format=None):
         self.streaming_jar = streaming_jar
