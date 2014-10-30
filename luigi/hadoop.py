@@ -370,9 +370,16 @@ class HadoopJobRunner(JobRunner):
         red_cmd = '{0} mrrunner.py reduce'.format(python_executable)
 
         # replace output with a temporary work directory
-        output_final = job.output().path
-        output_tmp_fn = output_final + '-temp-' + datetime.datetime.now().isoformat().replace(':', '-')
-        tmp_target = luigi.hdfs.HdfsTarget(output_tmp_fn, is_tmp=True)
+        job_output = job.output()
+        output_final = job_output.path
+        tmp_path_dt = datetime.datetime.now().isoformat().replace(':', '-')
+        output_tmp_fn = '{p}-temp-{dt}'.format(p=output_final, dt=tmp_path_dt)
+        if isinstance(job_output, luigi.hdfs.HdfsTarget):
+            tmp_target = luigi.hdfs.HdfsTarget(output_tmp_fn, is_tmp=True)
+        elif isinstance(job_output, luigi.s3.S3Target):
+            tmp_target = luigi.s3.S3Target(output_tmp_fn)
+        else:
+            raise RuntimeError('job.output() is not HdfsTarget nor S3Target')
 
         arglist = [luigi.hdfs.load_hadoop_cmd(), 'jar', self.streaming_jar]
 
@@ -429,8 +436,6 @@ class HadoopJobRunner(JobRunner):
                 isinstance(target, luigi.s3.S3Target)
             arglist += ['-input', target.path]
 
-        assert isinstance(job.output(), luigi.hdfs.HdfsTarget) or \
-            isinstance(job.output(), luigi.s3.S3Target)
         arglist += ['-output', output_tmp_fn]
 
         # submit job
