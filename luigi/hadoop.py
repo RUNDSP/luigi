@@ -467,7 +467,7 @@ class HadoopJobRunner(JobRunner):
         if move_strategy == 'hadoop-fs':
             assert isinstance(tmp_target, luigi.hdfs.HdfsTarget), \
                 "hadoop-fs only works for HdfsTarget"
-            logger.info('Moving temp output with hadoop -fs')
+            logger.info('Moving temp output')
             tmp_target.move(output_final, raise_if_exists=True)
         elif move_strategy == 'distcp':
             logger.info('Moving temp output with distcp')
