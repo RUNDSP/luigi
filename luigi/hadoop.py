@@ -330,7 +330,10 @@ class HadoopJobRunner(JobRunner):
     :class:`luigi.s3.S3Target`, you can use Apache distcp by setting
     [hadoop]->move-strategy=distcp and [hadoop]->distcp-jar=<jar-path-here>.
     On Amazon Elastic MapReduce, the EMRFS S3 distcp jar is recommended.
-    (i.e. /home/hadoop/lib/emr-s3distcp-1.0.jar).
+    (i.e. /home/hadoop/lib/emr-s3distcp-1.0.jar). You can provide additional
+    distcp arguments, including Amazon's unique S3 arguments, to the distcp jar
+    by defining a move_tmp_distcp_args() method on your task, which returns a
+    list, i.e. `['--s3Endpoint,s3-eu-west-1.amazonaws.com']`.
 
     TODO: add code to support Elastic Mapreduce (using boto)
           and local execution.
