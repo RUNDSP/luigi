@@ -446,7 +446,28 @@ class HadoopJobRunner(JobRunner):
         run_and_track_hadoop_job(arglist)
 
         # rename temporary work directory to given output
-        tmp_target.move(output_final, raise_if_exists=True)
+        move_strategy = config.get('hadoop', 'move-strategy', 'hadoop-fs')
+        if move_strategy == 'hadoop-fs':
+            assert isinstance(tmp_target, luigi.hdfs.HdfsTarget), \
+                "hadoop-fs only works for HdfsTarget"
+            logger.info('Moving temp output with hadoop -fs')
+            tmp_target.move(output_final, raise_if_exists=True)
+        elif move_strategy == 'distcp':
+            logger.info('Moving temp output with distcp')
+            distcp_jar = config.get('hadoop', 'distcp-jar')
+            distcp_job_args = [
+                luigi.hdfs.load_hadoop_cmd(), 'jar', distcp_jar,
+                '--src,{0}'.format(tmp_target.path),
+                '--dest,{0}'.format(output_final),
+            ]
+            if hasattr(job, 'move_tmp_distcp_args'):
+                distcp_job_args += job.move_tmp_distcp_args()
+            run_and_track_hadoop_job(distcp_job_args)
+            tmp_target.remove(recursive=True)
+        else:
+            raise RuntimeError('Unknown move strategy "{0}"'
+                               .format(move_strategy))
+
         self.finish()
 
     def finish(self):
