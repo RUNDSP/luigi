@@ -38,6 +38,7 @@ from itertools import groupby
 import configuration
 import luigi
 import luigi.hdfs
+import luigi.s3
 import mrrunner
 
 logger = logging.getLogger('luigi-interface')
@@ -404,6 +405,9 @@ class HadoopJobRunner(JobRunner):
         output_final = job.output().path
         # atomic output: replace output with a temporary work directory
         if self.atomic_output:
+            if isinstance(job.output(), luigi.s3.S3FlagTarget):
+                raise TypeError("atomic_output is not supported "
+                                "for S3FlagTarget")
             output_hadoop = '{output}-temp-{time}'.format(
                 output=output_final,
                 time=datetime.datetime.now().isoformat().replace(':', '-'))
@@ -461,12 +465,14 @@ class HadoopJobRunner(JobRunner):
             arglist += ['-inputformat', self.input_format]
 
         for target in luigi.task.flatten(job.input_hadoop()):
-            if not isinstance(target, luigi.hdfs.HdfsTarget):
-                raise TypeError('target must be an HdfsTarget')
+            if not isinstance(target, luigi.hdfs.HdfsTarget) \
+                    and not isinstance(target, luigi.s3.S3FlagTarget):
+                raise TypeError('target must be an HdfsTarget or S3FlagTarget')
             arglist += ['-input', target.path]
 
-        if not isinstance(job.output(), luigi.hdfs.HdfsTarget):
-            raise TypeError('outout must be an HdfsTarget')
+        if not isinstance(job.output(), luigi.hdfs.HdfsTarget) \
+                and not isinstance(job.output(), luigi.s3.S3FlagTarget):
+            raise TypeError('output must be an HdfsTarget or S3FlagTarget')
         arglist += ['-output', output_hadoop]
 
         # submit job
