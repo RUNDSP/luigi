@@ -466,8 +466,8 @@ class HadoopJobRunner(JobRunner):
 
         for target in luigi.task.flatten(job.input_hadoop()):
             if not isinstance(target, luigi.hdfs.HdfsTarget) \
-                    and not isinstance(target, luigi.s3.S3FlagTarget):
-                raise TypeError('target must be an HdfsTarget or S3FlagTarget')
+                    and not isinstance(target, luigi.s3.S3Target):
+                raise TypeError('target must be an HdfsTarget or S3Target')
             arglist += ['-input', target.path]
 
         if not isinstance(job.output(), luigi.hdfs.HdfsTarget) \
