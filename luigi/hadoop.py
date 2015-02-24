@@ -355,7 +355,8 @@ class HadoopJobRunner(JobRunner):
 
     def __init__(self, streaming_jar, modules=None, streaming_args=None,
                  libjars=None, libjars_in_hdfs=None, jobconfs=None,
-                 input_format=None, output_format=None, atomic_output=True):
+                 input_format=None, output_format=None,
+                 end_job_with_atomic_move_dir=True):
         def get(x, default):
             return x is not None and x or default
         self.streaming_jar = streaming_jar
@@ -366,7 +367,7 @@ class HadoopJobRunner(JobRunner):
         self.jobconfs = get(jobconfs, {})
         self.input_format = input_format
         self.output_format = output_format
-        self.atomic_output = atomic_output
+        self.end_job_with_atomic_move_dir = end_job_with_atomic_move_dir
         self.tmp_dir = False
 
     def run_job(self, job):
@@ -404,10 +405,10 @@ class HadoopJobRunner(JobRunner):
 
         output_final = job.output().path
         # atomic output: replace output with a temporary work directory
-        if self.atomic_output:
+        if self.end_job_with_atomic_move_dir:
             if isinstance(job.output(), luigi.s3.S3FlagTarget):
-                raise TypeError("atomic_output is not supported "
-                                "for S3FlagTarget")
+                raise TypeError("end_job_with_atomic_move_dir is not supported"
+                                " for S3FlagTarget")
             output_hadoop = '{output}-temp-{time}'.format(
                 output=output_final,
                 time=datetime.datetime.now().isoformat().replace(':', '-'))
@@ -482,7 +483,7 @@ class HadoopJobRunner(JobRunner):
 
         run_and_track_hadoop_job(arglist)
 
-        if self.atomic_output:
+        if self.end_job_with_atomic_move_dir:
             luigi.hdfs.HdfsTarget(output_hadoop).move_dir(output_final)
         self.finish()
 
