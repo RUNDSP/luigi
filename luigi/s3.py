@@ -61,9 +61,11 @@ class S3Client(FileSystem):
     """
 
     def __init__(self, aws_access_key_id=None, aws_secret_access_key=None,
+                 validate_bucket=True,
                  **kwargs):
         options = self._get_s3_config()
         options.update(kwargs)
+        self.validate_bucket=validate_bucket
         # Removing key args would break backwards compability
         if not aws_access_key_id:
             aws_access_key_id = options.get('aws_access_key_id')
@@ -83,7 +85,7 @@ class S3Client(FileSystem):
         (bucket, key) = self._path_to_bucket_and_key(path)
 
         # grab and validate the bucket
-        s3_bucket = self.s3.get_bucket(bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(bucket, validate=self.validate_bucket)
 
         # root always exists
         if self._is_root(key):
@@ -116,7 +118,7 @@ class S3Client(FileSystem):
                 'Cannot delete root of bucket at path %s' % path)
 
         # grab and validate the bucket
-        s3_bucket = self.s3.get_bucket(bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(bucket, validate=self.validate_bucket)
 
         # file
         s3_key = s3_bucket.get_key(key)
@@ -143,7 +145,7 @@ class S3Client(FileSystem):
     def get_key(self, path):
         (bucket, key) = self._path_to_bucket_and_key(path)
 
-        s3_bucket = self.s3.get_bucket(bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(bucket, validate=self.validate_bucket)
 
         return s3_bucket.get_key(key)
 
@@ -154,7 +156,7 @@ class S3Client(FileSystem):
         (bucket, key) = self._path_to_bucket_and_key(destination_s3_path)
 
         # grab and validate the bucket
-        s3_bucket = self.s3.get_bucket(bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(bucket, validate=self.validate_bucket)
 
         # put the file
         s3_key = Key(s3_bucket)
@@ -167,7 +169,7 @@ class S3Client(FileSystem):
         """
         (bucket, key) = self._path_to_bucket_and_key(destination_s3_path)
         # grab and validate the bucket
-        s3_bucket = self.s3.get_bucket(bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(bucket, validate=self.validate_bucket)
 
         # put the content
         s3_key = Key(s3_bucket)
@@ -194,7 +196,7 @@ class S3Client(FileSystem):
         (bucket, key) = self._path_to_bucket_and_key(destination_s3_path)
 
         # grab and validate the bucket
-        s3_bucket = self.s3.get_bucket(bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(bucket, validate=self.validate_bucket)
 
         # calculate the number of parts (int division).
         # use modulo to avoid float precision issues
@@ -235,7 +237,7 @@ class S3Client(FileSystem):
         (src_bucket, src_key) = self._path_to_bucket_and_key(source_path)
         (dst_bucket, dst_key) = self._path_to_bucket_and_key(destination_path)
 
-        s3_bucket = self.s3.get_bucket(dst_bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(dst_bucket, validate=self.validate_bucket)
 
         if self.is_dir(source_path):
             src_prefix = self._add_path_delimiter(src_key)
@@ -262,7 +264,7 @@ class S3Client(FileSystem):
         (bucket, key) = self._path_to_bucket_and_key(path)
 
         # grab and validate the bucket
-        s3_bucket = self.s3.get_bucket(bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(bucket, validate=self.validate_bucket)
 
         key_path = self._add_path_delimiter(key)
         key_path_len = len(key_path)
@@ -276,7 +278,7 @@ class S3Client(FileSystem):
         (bucket, key) = self._path_to_bucket_and_key(path)
 
         # grab and validate the bucket
-        s3_bucket = self.s3.get_bucket(bucket, validate=True)
+        s3_bucket = self.s3.get_bucket(bucket, validate=self.validate_bucket)
 
         # root is a directory
         if self._is_root(key):
